@@ -15,3 +15,11 @@ class Player(Entity):
         super().__init__(game, entity_settings)
 
         self.skill_manager = SkillManager(self)
+
+    def move_and_return(self, direction_vec2):
+        if super().move_and_return(direction_vec2):
+            self.on_walk()
+    
+    def on_walk(self):
+        self.skill_manager.skills["running"].add_experience(1)
+        self.game.asset_manager.get_sound("footstep_grass01", 0.1).play()

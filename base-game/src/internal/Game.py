@@ -34,18 +34,16 @@ class Game:
 
         ######### MANAGERS #########
         self.asset_manager = AssetManager("base_set") # TODO: make this changeable and a variable
-        self.map_manager = MapManager(self, MapCreateInfo(100, 100, 50))
+        self.map_manager = MapManager(self, MapCreateInfo(500, 500, 50))
         self.camera_manager = CameraManager(self) # This manages the camera
         self.input_manager = InputManager(self)
         self.event_manager = EventManager(self)
         self.entity_manager = EntityManager(self)
         
         ######### PLAYER #########
-
-        
         spawn_x = self.map_manager.map.width // 2
         spawn_y = self.map_manager.map.height // 2
-        spawn_z = self.camera_manager.z
+        spawn_z = self.map_manager.map.depth
 
         self.entity_manager.set_player(
             Player(
@@ -58,14 +56,10 @@ class Game:
             )
         )
 
-
-
         ######### USER INTERFACE #########
-
         # TODO: this
 
         ######### TURN SYSTEM #########
-
         self.turn = 0
 
         ######### DEBUG #########
@@ -89,6 +83,16 @@ class Game:
     ##               GAME FUNCTIONS                ##
     #################################################
     
+    def draw_loading_bar(self, x, y, max_width, height, progress):
+        # Clamp progress
+        progress = max(0.0, min(1.0, progress))
+        
+        # Calculate the dynamic width
+        current_width = int(max_width * progress)
+        
+        # Draw the single rectangle
+        pygame.draw.rect(self.screen, (255, 255, 255), (x, y, current_width, height))           
+
     def start(self):
         print("Started game.")
         self.map_manager.start_world_generation()
@@ -98,11 +102,15 @@ class Game:
             self.map_manager.update_world_generation() # If map is generating still then update generation
             print(f"Generation progress {self.map_manager.generation_progress * 100:.1f}")
         else:
-            self.entity_manager.update_turn()
-            
+            self.entity_manager.update_turn()   
 
     def draw(self):
         self.screen.fill((0, 0, 0))
+        if self.map_manager.generating:
+            bar_size = 30
+            screen_size_tu = self.screen.get_size()
+            self.draw_loading_bar(100, screen_size_tu[1] // 2 - bar_size, self.screen.get_size()[0] - 100, bar_size, self.map_manager.generation_progress)
+            return
         self.map_manager.map.draw(self.screen, self.camera_manager.camera, self.camera_manager.z, self.camera_manager.zoom_level, self.global_debug)
         self.entity_manager.draw(self.screen, self.camera_manager.zoom_level)
 
@@ -111,6 +119,7 @@ class Game:
 
         ### LOOP ###
         while self.running:
+
             self.event_manager.gather_events() # Wrapper for pygame.event.get()
 
             self.update()

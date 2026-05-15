@@ -49,3 +49,5 @@ class MapManager:
             self.generating = False
 
             self.generation_progress = 1.0
+            self.game.entity_manager.player.apply_gravity()
+            self.game.input_manager.recentre_on_player()

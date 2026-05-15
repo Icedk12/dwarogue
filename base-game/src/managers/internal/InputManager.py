@@ -25,6 +25,13 @@ class InputManager:
 
     def handle_keyboard_input(self, event):
         """Takes in a pygame.event and does stuff with it :p"""
+        if event.key == pygame.K_ESCAPE:
+            self.game.running = False
+            # You can quit before loading
+
+        if self.game.map_manager.generating:
+            return
+        # But otherwise you have to wait
         if event.key == pygame.K_w:
             self.game.entity_manager.player.move_and_return(pygame.Vector2(0, -1))
             self.recentre_on_player()
@@ -37,8 +44,7 @@ class InputManager:
         elif event.key == pygame.K_d:
             self.game.entity_manager.player.move_and_return(pygame.Vector2(1, 0))
             self.recentre_on_player()
-        if event.key == pygame.K_ESCAPE:
-            self.game.running = False
+        
 
     def recentre_on_player(self):
         player_pos = self.game.entity_manager.player.pos
@@ -105,11 +111,9 @@ class InputManager:
 
     def on_ctrl_scroll_up(self):
         self.game.camera_manager.zoom_level = min(self.game.camera_manager.zoom_level + 0.5, 4.0)
-        print("Zoomed in")
 
     def on_ctrl_scroll_down(self):
         self.game.camera_manager.zoom_level = max(self.game.camera_manager.zoom_level - 0.5, 0.5)
-        print("Zoomed out")
 
     def on_scroll_up(self):
         self.game.camera_manager.z = min(

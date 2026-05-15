@@ -33,23 +33,22 @@ class Entity:
     ##                  GRAVITY                    ##
     #################################################
 
+    def has_solid_ground_below(self):
+        """Check if there's a solid tile directly below current position."""
+        if self.pos.z <= 0:
+            return True
+
+        below = pygame.Vector3(self.pos.x, self.pos.y, self.pos.z - 1)
+        tile_id = self.game.map_manager.map.get_tile_id(below)
+        return tile_id != 0
+
     def apply_gravity(self):
-        """Moves the player down until they land on solid ground."""
-        falling = False
-
-        while True:
-            below = pygame.Vector3(self.pos.x, self.pos.y, self.pos.z - 1)
-
-            # stop at bottom of map
-            if self.pos.z <= 0:
+        """Fall down until standing on solid ground (not in air)."""
+        while self.pos.z > 0:
+            current_tile_id = self.game.map_manager.map.get_tile_id(self.pos)
+            if current_tile_id != 0:  # Standing on something, not air
                 break
-            # if tile below is solid → stop falling
-            if self.game.map_manager.map.get_tile_id(below) != 0:
-                break
-            # otherwise fall
-            self.pos.z -= 1
-            falling = True
-        return falling
+            self.pos.z -= 1  # In air, fall down
 
     #################################################
     ##                    MOVE                     ##
@@ -58,32 +57,28 @@ class Entity:
     def move_and_return(self, direction_vec2):
         """This function handles walking, gravity application and climbing"""
         ######## WALKING ########
-        # 愛憎塗れで 此処を連れ出して
 
-        # Store the place where entity is trying to walk
         new_x = self.pos.x + direction_vec2.x
         new_y = self.pos.y + direction_vec2.y
 
         new_position = pygame.Vector3(new_x, new_y, self.pos.z)
-        del new_x, new_y # Delete those placeholder variables because we don't need them anymore
 
+        # Check if wall blocks horizontal movement at current z
+        if self.game.map_manager.map.is_wall_blocking(new_position):
+            # Wall blocks, try climbing
+            for z_layer in range(1, self.max_climb_height + 1):
+                new_position.z = self.pos.z + z_layer
+                if not self.game.map_manager.map.is_wall_blocking(new_position):
+                    self.pos = new_position
+                    self.apply_gravity()
+                    return True
+            return False  # Can't climb over
 
-        if self.game.map_manager.map.is_walkable(new_position):
-            # If new pos is walkable, move to it, and then apply gravity
-            self.pos = new_position
-            self.apply_gravity()
-            return True # Succeeded
-
-        ######## CLIMBING ########
-        for z_layer in range(1, self.max_climb_height + 1):
-            new_position.z = self.pos.z + z_layer # Get the new z layer to step to
-
-            if self.game.map_manager.map.is_walkable(new_position):
-                self.pos = new_position
-                return True # Succeeded
-            
-        del new_position # Just because. maybe remove idk what the implications are
-        return False # Failed
+        # Not blocked by wall, move horizontally and settle with gravity
+        new_position.z = self.pos.z
+        self.pos = new_position
+        self.apply_gravity()
+        return True
             
     #################################################
     ##                    DRAW                     ##
@@ -94,19 +89,17 @@ class Entity:
             return
 
         tile_size = self.game.map_manager.map.tile_size
-
-        # world → pixel
-        world_x = self.pos.x * tile_size
-        world_y = self.pos.y * tile_size
-
-        # camera is already pixel space
         cam = self.game.camera_manager.camera
+        screen = self.game.screen
 
-        # screen space
-        screen_x = (world_x - cam.x) * scale
-        screen_y = (world_y - cam.y) * scale
+        screen_center_x = screen.get_width() // 2
+        screen_center_y = screen.get_height() // 2
+
+        # tile space → screen space (consistent with Map.draw)
+        screen_x = screen_center_x + (self.pos.x - cam.x) * tile_size * scale
+        screen_y = screen_center_y + (self.pos.y - cam.y) * tile_size * scale
 
         image = self.game.asset_manager.get_image(self.image, scale)
 
         if image:
-            self.game.screen.blit(image, (screen_x, screen_y))
+            self.game.screen.blit(image, (int(screen_x), int(screen_y)))

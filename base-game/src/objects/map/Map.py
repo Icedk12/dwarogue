@@ -451,6 +451,16 @@ class Map:
 
         return getattr(tile, "walkable", False)
 
+    def is_wall_blocking(self, pos):
+        """Returns if there's a solid wall blocking horizontal movement."""
+
+        tile = self.get_tile(pos)
+
+        if tile is None:
+            return False
+
+        return not getattr(tile, "walkable", False)
+
     #################################################
     ##             SURFACE HELPERS                 ##
     #################################################
