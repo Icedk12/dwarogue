@@ -29,7 +29,7 @@ class Game:
         self.running = True
 
         ######### MANAGERS #########
-        self.asset_manager = AssetManager("base-set") # TODO: make this changeable and a variable
+        self.asset_manager = AssetManager("base_set") # TODO: make this changeable and a variable
         self.camera_manager = CameraManager(self) # This manages the camera
         self.input_manager = InputManager()
         self.event_manager = EventManager(self)
