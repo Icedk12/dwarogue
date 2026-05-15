@@ -9,5 +9,3 @@ class CameraManager:
 
         self.zoom_level = 1.0
         self.last_mouse_pos = (0, 0)
-
-        
