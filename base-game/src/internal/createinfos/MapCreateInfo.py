@@ -11,3 +11,4 @@ class MapCreateInfo:
         self.octaves = noise_settings.octaves
         self.persistence = noise_settings.persistence
         self.lacunarity = noise_settings.lacunarity
+        self.seed = noise_settings.seed

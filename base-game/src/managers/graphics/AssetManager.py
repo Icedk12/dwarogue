@@ -32,7 +32,7 @@ class AssetManager:
             #### HANDLE ASSET LOADING ####
             if asset_name not in self.images:
                 # Create the full path of the graphic set specific asset, to be added to self.images
-                asset_path = os.path.join('assets', self.graphic_set, 'images', asset_name + '.png')
+                asset_path = os.path.join('base-game', 'assets', self.graphic_set, 'images', asset_name + '.png')
 
                 # Add to self.images dictionary
                 self.images[asset_name] = pygame.image.load(asset_path).convert_alpha()
@@ -70,7 +70,7 @@ class AssetManager:
             #### HANDLE ASSET LOADING ####
             if asset_name not in self.sounds:
                 # Using .wav because it is much more storage efficient
-                asset_path = os.path.join('assets', self.graphic_set, 'sounds', asset_name + '.wav')
+                asset_path = os.path.join('base-game', 'assets', self.graphic_set, 'sounds', asset_name + '.wav')
                 sound = pygame.mixer.Sound(asset_path) # Create sound object
 
             #### HANDLE VOLUME ####

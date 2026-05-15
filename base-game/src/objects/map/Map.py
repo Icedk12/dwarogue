@@ -1,4 +1,5 @@
 from opensimplex import noise2array, seed
+import random
 
 import numpy as np
 import math
@@ -42,12 +43,11 @@ class Map:
         #################################################
 
         self.scale = create_info.scale
-
         self.octaves = create_info.octaves
-
         self.persistence = create_info.persistence
-
         self.lacunarity = create_info.lacunarity
+
+        self.seed = create_info.seed # Important
 
         #################################################
         ##               TILE MANAGER                  ##
@@ -112,6 +112,12 @@ class Map:
         ##            BASE TERRAIN PASS                ##
         #################################################
 
+        #### Random seed ####
+        if self.seed is None: 
+            self.seed = random.randint(-999999999, 999999999)
+            
+        seed(self.seed) # Actually set the seed
+
         yield from self.generate_base_terrain()
 
         #################################################
@@ -150,12 +156,6 @@ class Map:
         sea_level = int(self.depth * 0.7)
 
         max_height = int(self.depth * 0.2)
-
-        #################################################
-        ##                    SEED                     ##
-        #################################################
-
-        seed(0)
 
         #################################################
         ##             NOISE GENERATION                ##
@@ -259,7 +259,8 @@ class Map:
                 ##               SURFACE TILE                  ##
                 #################################################
 
-                self.tiles[surface_z, y, x] = self.tile_manager.TILE_GRASS
+                if self.tiles[surface_z, y, x] == 0:
+                    self.tiles[surface_z, y, x] = self.tile_manager.TILE_GRASS
 
                 #################################################
                 ##               UNDERGROUND                   ##
@@ -300,7 +301,8 @@ class Map:
                 # if biome == TUNDRA:
                 #     snow
 
-                self.tiles[surface_z, y, x] = self.tile_manager.TILE_GRASS
+                if self.tiles[surface_z, y, x] == 0:
+                    self.tiles[surface_z, y, x] = self.tile_manager.TILE_GRASS
 
             #################################################
             ##              GENERATION YIELD               ##
@@ -315,22 +317,23 @@ class Map:
     def draw(self, surface, camera_pos, current_z, zoom_level=1.0, debug=False):
         """Draws visible tiles."""
 
-        #################################################
+       #################################################
         ##             CAMERA CULLING                  ##
         #################################################
 
-        visible_world_w = (surface.get_width() / zoom_level)
+        tile_size = self.tile_size
 
-        visible_world_h = (
-            surface.get_height() / zoom_level)
+        visible_world_w = surface.get_width() / zoom_level
+        visible_world_h = surface.get_height() / zoom_level
 
-        start_x = max(0, int(camera_pos.x // self.tile_size))
+        cam_x = camera_pos.x
+        cam_y = camera_pos.y
 
-        start_y = max(0, int(camera_pos.y // self.tile_size))
+        start_x = max(0, int(cam_x // tile_size))
+        start_y = max(0, int(cam_y // tile_size))
 
-        end_x = min(self.width, int((camera_pos.x + visible_world_w) // self.tile_size) + 2)
-
-        end_y = min(self.height, int((camera_pos.x + visible_world_h) // self.tile_size) + 2)
+        end_x = min(self.width, int((cam_x + visible_world_w) // tile_size) + 2)
+        end_y = min(self.height, int((cam_y + visible_world_h) // tile_size) + 2)
 
         #################################################
         ##                DRAW LOOP                    ##
@@ -409,44 +412,51 @@ class Map:
     ##               TILE HELPERS                  ##
     #################################################
 
-    def in_bounds(self, x, y, z=None):
+    def in_bounds(self, pos):
         """Returns True if coordinates are valid."""
 
-        if not (0 <= x < self.width):
+        if not (0 <= pos.x < self.width):
             return False
 
-        if not (0 <= y < self.height):
+        if not (0 <= pos.y < self.height):
             return False
 
-        if z is not None:
-            return 0 <= z < self.depth
+        # z is only required for 3D tile access
+        if pos.z is None:
+            return True
 
-        return True
-
+        return 0 <= pos.z < self.depth
+    
     #################################################
     ##               TILE LOOKUPS                  ##
     #################################################
 
-    def get_tile_id(self, x, y, z):
-        """Returns tile id at coordinates."""
-
-        if not self.in_bounds(x, y, z):
-            return -1
-
-        return self.tiles[z, y, x]
-
-    def set_tile_id(self, x, y, z, tile_id):
+    def set_tile_id(self, pos, tile_id):
         """Sets tile id at coordinates."""
 
-        if not self.in_bounds(x, y, z):
+        if pos.z is None:
             return
 
-        self.tiles[z, y, x] = tile_id
+        if not self.in_bounds(pos):
+            return
 
-    def get_tile(self, x, y, z):
+        self.tiles[int(pos.z), int(pos.y), int(pos.x)] = tile_id
+
+    def get_tile_id(self, pos):
+        """Returns tile id at coordinates."""
+
+        if pos.z is None:
+            return -1  # invalid for voxel access
+
+        if not self.in_bounds(pos):
+            return -1
+
+        return self.tiles[int(pos.z), int(pos.y), int(pos.x)]
+
+    def get_tile(self, pos):
         """Returns tile object."""
 
-        tile_id = self.get_tile_id(x, y, z)
+        tile_id = self.get_tile_id(pos)
 
         if tile_id <= 0:
             return None
@@ -457,10 +467,10 @@ class Map:
     ##               WALKABILITY                   ##
     #################################################
 
-    def is_walkable(self, x, y, z):
+    def is_walkable(self, pos):
         """Returns if tile is walkable."""
 
-        tile = self.get_tile(x, y, z)
+        tile = self.get_tile(pos)
 
         if tile is None:
             return True
@@ -470,11 +480,18 @@ class Map:
     #################################################
     ##             SURFACE HELPERS                 ##
     #################################################
-
-    def get_surface_z(self, x, y):
+    def get_surface_z_coords(self, x, y):
         """Returns cached surface z."""
 
-        if not self.in_bounds(x, y):
+        if not (0 <= x < self.width and 0 <= y < self.height):
             return 0
 
-        return self.heightmap[y, x]
+        return self.heightmap[int(y), int(x)]
+
+    def get_surface_z(self, pos):
+        """Returns cached surface z."""
+
+        if not self.in_bounds(pos):
+            return 0
+
+        return self.heightmap[int(pos.y), int(pos.x)]

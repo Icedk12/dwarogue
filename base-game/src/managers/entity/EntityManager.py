@@ -9,7 +9,8 @@ class EntityManager:
     #################################################
     ##                    INIT                     ##
     #################################################    
-    def __init__(self):
+    def __init__(self, game):
+        self.game = game
         self.entities = []
         self.player = None
 
@@ -30,15 +31,15 @@ class EntityManager:
     ##                    FUNC                     ##
     #################################################
 
-    def update_turn(self, game):
+    def update_turn(self):
         """Calls the update_turn function for all entities and increases turn counter."""
         for e in self.entities:
             if e != self.player:
-                e.update_turn(game)
+                e.update_turn(self.game)
 
-        game.turn += 1
+        self.game.turn += 1
 
-    def draw(self, surface, game, scale=1.0):
+    def draw(self, surface, scale=1.0):
         """Draws all entities."""
         for e in self.entities:
-            e.draw(surface, game, scale)
+            e.draw(scale)

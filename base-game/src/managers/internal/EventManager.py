@@ -22,13 +22,14 @@ class EventManager:
         for event in pygame.event.get():
 
             if event.type == pygame.QUIT:
-                self.x_button_pressed() # Checks if the X button is pressed
+                self.x_button_pressed() ### QUIT
 
-            elif event.type == (pygame.KEYDOWN or pygame.KEYUP):
-                self.game.input_manager.handle_keyboard_input(event) # Ask the game's input_manager to do stuff based on keys pressed
+            elif event.type in (pygame.KEYDOWN, pygame.KEYUP):
+                if event.type == pygame.KEYDOWN:
+                    self.game.input_manager.handle_keyboard_input(event) ### KEYS
 
-            elif event.type == (pygame.MOUSEBUTTONDOWN or pygame.MOUSEBUTTONUP):
-                self.game.input_manager.handle_mouse_input(event) # Ask the game's input_manager to do stuff based on mouse
+            elif event.type in (pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP, pygame.MOUSEWHEEL, pygame.MOUSEMOTION):
+                self.game.input_manager.handle_mouse_input(event) ### MOUSE
 
     #################################################
     ##           EVENT SPECIFIC FUNCTIONS          ##
