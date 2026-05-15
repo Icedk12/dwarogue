@@ -36,7 +36,7 @@ class Entity:
     def apply_gravity(self):
         """Moves the player down a level until they are not in the air."""
         falling = False
-        while self.game.map_manager.get_floor_tile_id(self.position) == 0: # Checks if the floor tile at the players pos is air (0)
+        while self.game.map_manager.map.get_floor_tile_id(self.position) == 0: # Checks if the floor tile at the players pos is air (0)
             if self.z <= 0:
                 break # Prevents falling out of map
             self.position.z -= 1 # Falls you down a layer
