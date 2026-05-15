@@ -1,3 +1,4 @@
+import pygame
 from src.internal.createinfos.TileCreateInfo import TileCreateInfo
 
 class Tile:
@@ -5,7 +6,7 @@ class Tile:
 
     #   INFO:
     #   Author: tompl
-    #   Status: In progress 
+    #   Status: Done. i think 
 
     #################################################
     ##                    INIT                     ##
@@ -20,5 +21,18 @@ class Tile:
         self.asset_name = self.tile_settings.asset_name
         self.walkable = self.tile_settings.is_walkable
 
+    #################################################
+    ##                    DRAW                     ##
+    #################################################
+
     def draw(self, pos, scale=1.0, debug=False, alpha=None):
-        image = self.game.asset_manager.get_image(self.asset_name)
+        # Get the image using assetmanager
+        image = self.game.asset_manager.get_image(self.asset_name, scale, alpha)
+        self.game.screen.blit(image, pos) # blit to screen
+
+        if debug:
+            # Draw a red square if not walkable and green if walkable
+            # For debug purposes. not really i just like grids
+            color = (0, 255, 0) if self.walkable else (255, 0, 0)
+            rect = image.get_rect(topleft=pos)
+            pygame.draw.rect(self.game.screen, color, rect, 1)
