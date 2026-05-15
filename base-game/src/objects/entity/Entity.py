@@ -34,12 +34,20 @@ class Entity:
     #################################################
 
     def apply_gravity(self):
-        """Moves the player down a level until they are not in the air."""
+        """Moves the player down until they land on solid ground."""
         falling = False
-        while self.game.map_manager.map.get_tile_id(self.pos) == 0: # Checks if the floor tile at the players pos is air (0)
+
+        while True:
+            below = pygame.Vector3(self.pos.x, self.pos.y, self.pos.z - 1)
+
+            # stop at bottom of map
             if self.pos.z <= 0:
-                break # Prevents falling out of map
-            self.pos.z -= 1 # Falls you down a layer
+                break
+            # if tile below is solid → stop falling
+            if self.game.map_manager.map.get_tile_id(below) != 0:
+                break
+            # otherwise fall
+            self.pos.z -= 1
             falling = True
         return falling
 
@@ -81,18 +89,24 @@ class Entity:
     ##                    DRAW                     ##
     #################################################
     def draw(self, scale=1.0):
-        if self.pos.z != self.game.camera_manager.z:
-            return # Not on same z level as camera dont draw
 
-        # Stores the position of the entity in the world on the tile grid
-        world_position = pygame.Vector2(
-            self.pos.x * self.game.map_manager.map.tile_size,
-            self.pos.y * self.game.map_manager.map.tile_size
-        )
-        # Holy shit thats a long vector 2 ------------------------------------------------------> bruh
-        screen_position = pygame.Vector2(round((world_position.x - self.game.camera_manager.camera.x) * scale), round((world_position.y - self.game.camera_manager.camera.y) * scale))
+        if self.pos.z != self.game.camera_manager.z:
+            return
+
+        tile_size = self.game.map_manager.map.tile_size
+
+        # world → pixel
+        world_x = self.pos.x * tile_size
+        world_y = self.pos.y * tile_size
+
+        # camera is already pixel space
+        cam = self.game.camera_manager.camera
+
+        # screen space
+        screen_x = (world_x - cam.x) * scale
+        screen_y = (world_y - cam.y) * scale
 
         image = self.game.asset_manager.get_image(self.image, scale)
-        
+
         if image:
-            self.game.screen.blit(image, (screen_position.x, screen_position.y)) # Blit image to screen
+            self.game.screen.blit(image, (screen_x, screen_y))

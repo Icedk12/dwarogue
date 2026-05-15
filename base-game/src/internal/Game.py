@@ -43,9 +43,9 @@ class Game:
         ######### PLAYER #########
 
         
-        spawn_x = 0
-        spawn_y = 0
-        spawn_z = self.camera_manager.z  # Use camera's z-level instead
+        spawn_x = self.map_manager.map.width // 2
+        spawn_y = self.map_manager.map.height // 2
+        spawn_z = self.camera_manager.z
 
         self.entity_manager.set_player(
             Player(

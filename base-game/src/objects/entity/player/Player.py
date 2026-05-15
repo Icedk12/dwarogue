@@ -15,4 +15,3 @@ class Player(Entity):
         super().__init__(game, entity_settings)
 
         self.skill_manager = SkillManager(self)
-    
