@@ -4,6 +4,7 @@ from src.managers.graphics.AssetManager import AssetManager
 from src.managers.internal.CameraManager import CameraManager
 from src.managers.internal.InputManager import InputManager
 from src.managers.internal.EventManager import EventManager
+from src.managers.entity.EntityManager import EntityManager
 
 class Game:
     """A self sustaining game class that supports asset managment and all that jazz."""
@@ -33,7 +34,7 @@ class Game:
 
         ######### USER INTERFACE #########
 
-        # TODO: this        
+        # TODO: this
 
         ######### MAP SETTINGS #########
 
@@ -45,6 +46,9 @@ class Game:
 
         ######### ASYNC LOADING #########
 
+
+        ######### DEBUG #########
+        self.global_debug = False
 
     #################################################
     ##               INIT FUNCTIONS                ##
