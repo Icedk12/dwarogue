@@ -5,7 +5,7 @@ class InputManager:
 
     #   INFO:
     #   Author: tompl
-    #   Status: Basics done, uses not applied
+    #   Status: Implemented, not applied
 
     #################################################
     ##                    INIT                     ##
