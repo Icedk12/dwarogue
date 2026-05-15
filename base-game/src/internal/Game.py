@@ -1,5 +1,7 @@
 import pygame
 
+from src.internal.createinfos.GameCreateInfo import GameCreateInfo
+
 from src.managers.graphics.AssetManager import AssetManager
 from src.managers.internal.CameraManager import CameraManager
 from src.managers.internal.InputManager import InputManager
@@ -13,7 +15,7 @@ class Game:
     ##                    INIT                     ##
     #################################################
     
-    def __init__(self, game_settings):
+    def __init__(self, game_settings : GameCreateInfo):
         ######### SETUP #########
         self.game_settings = game_settings
 
