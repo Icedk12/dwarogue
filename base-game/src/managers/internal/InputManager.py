@@ -24,7 +24,6 @@ class InputManager:
     # TODO: these are pretty simple rn but will hold all input related tasks.
 
     def handle_keyboard_input(self, event):
-        self.recentre_on_player()
         """Takes in a pygame.event and does stuff with it :p"""
         if event.key == pygame.K_w:
             self.game.entity_manager.player.move_and_return(pygame.Vector2(0, -1))
@@ -33,17 +32,19 @@ class InputManager:
             self.game.entity_manager.player.move_and_return(pygame.Vector2(0, 1))
             self.recentre_on_player()
         elif event.key == pygame.K_a:
-            self.game.entity_manager.player.move_and_return(pygame.Vector2(1, 0))
-            self.recentre_on_player()
-        elif event.key == pygame.K_d:
             self.game.entity_manager.player.move_and_return(pygame.Vector2(-1, 0))
             self.recentre_on_player()
+        elif event.key == pygame.K_d:
+            self.game.entity_manager.player.move_and_return(pygame.Vector2(1, 0))
+            self.recentre_on_player()
+        if event.key == pygame.K_ESCAPE:
+            self.game.running = False
 
     def recentre_on_player(self):
         player_pos = self.game.entity_manager.player.pos
         self.game.camera_manager.camera.x = player_pos.x
         self.game.camera_manager.camera.y = player_pos.y
-        self.game.camera_manager.z = self.game.map_manager.map.depth - 1
+        self.game.camera_manager.z = int(player_pos.z)
 
     def handle_mouse_input(self, event):
         """Takes in a pygame.event and does stuff but mouse flavoured."""
@@ -92,10 +93,10 @@ class InputManager:
         if self.last_mouse_pos is not None:
             delta = current - self.last_mouse_pos
 
-            # optional: scale pan with zoom (feels better)
+            # Scale pan inversely with zoom (feels better)
             zoom = self.game.camera_manager.zoom_level
             if zoom != 0:
-                delta /= zoom
+                delta /= (zoom * self.game.map_manager.map.tile_size)
 
             self.game.camera_manager.camera.x -= delta.x
             self.game.camera_manager.camera.y -= delta.y

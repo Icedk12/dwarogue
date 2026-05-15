@@ -1,8 +1,8 @@
 from opensimplex import noise2array, seed
 import random
 
+import pygame
 import numpy as np
-import math
 
 from src.managers.map.TileManager import TileManager
 
@@ -314,26 +314,32 @@ class Map:
     ##                   DRAWING                   ##
     #################################################
 
-    def draw(self, surface, camera_pos, current_z, zoom_level=1.0, debug=False):
+    def draw(self, surface, camera_pos: pygame.Vector2, current_z: int, zoom_level: float, debug=False):
         """Draws visible tiles."""
 
-       #################################################
+        #################################################
         ##             CAMERA CULLING                  ##
         #################################################
 
         tile_size = self.tile_size
 
-        visible_world_w = surface.get_width() / zoom_level
-        visible_world_h = surface.get_height() / zoom_level
+        # visible area in TILE SPACE (because camera is tile-based)
+        visible_tiles_w = surface.get_width() / (tile_size * zoom_level)
+        visible_tiles_h = surface.get_height() / (tile_size * zoom_level)
 
         cam_x = camera_pos.x
         cam_y = camera_pos.y
 
-        start_x = max(0, int(cam_x // tile_size))
-        start_y = max(0, int(cam_y // tile_size))
+        cull_buffer = 5  # Buffer to prevent visible culling when zoomed
 
-        end_x = min(self.width, int((cam_x + visible_world_w) // tile_size) + 2)
-        end_y = min(self.height, int((cam_y + visible_world_h) // tile_size) + 2)
+        start_x = max(0, int(cam_x - visible_tiles_w // 2 - cull_buffer))
+        start_y = max(0, int(cam_y - visible_tiles_h // 2 - cull_buffer))
+
+        end_x = min(self.width, int(cam_x + visible_tiles_w // 2 + cull_buffer))
+        end_y = min(self.height, int(cam_y + visible_tiles_h // 2 + cull_buffer))
+
+        screen_center_x = surface.get_width() // 2
+        screen_center_y = surface.get_height() // 2
 
         #################################################
         ##                DRAW LOOP                    ##
@@ -341,69 +347,36 @@ class Map:
 
         for y in range(start_y, end_y):
 
-            world_y = y * self.tile_size
-
-            screen_y = int(
-                math.floor(
-                    (
-                        world_y
-                        - camera_pos.y
-                    )
-                    * zoom_level
-                )
-            )
-
             for x in range(start_x, end_x):
 
-                tile_id = self.tiles[
-                    current_z,
-                    y,
-                    x
-                ]
+                tile_id = self.tiles[current_z, y, x]
 
                 #################################################
-                ##                 SKIP AIR                    ##
+                ##                 SKIP AIR                   ##
                 #################################################
 
                 if tile_id == self.tile_manager.TILE_AIR:
                     continue
 
-                #################################################
-                ##               GET TILE OBJECT               ##
-                #################################################
-
-                tile = self.tile_manager.get_tile(
-                    tile_id
-                )
+                tile = self.tile_manager.get_tile(tile_id)
 
                 if tile is None:
                     continue
 
                 #################################################
-                ##              SCREEN POSITION                ##
+                ##              SCREEN POSITION               ##
                 #################################################
 
-                world_x = x * self.tile_size
-
-                screen_x = int(
-                    math.floor(
-                        (
-                            world_x
-                            - camera_pos.x
-                        )
-                        * zoom_level
-                    )
-                )
+                # TILE SPACE → SCREEN SPACE
+                screen_x = screen_center_x + (x - cam_x) * tile_size * zoom_level
+                screen_y = screen_center_y + (y - cam_y) * tile_size * zoom_level
 
                 #################################################
-                ##                 DRAW TILE                   ##
+                ##                 DRAW TILE                  ##
                 #################################################
 
                 tile.draw(
-                    (
-                        screen_x,
-                        screen_y
-                    ),
+                    (int(screen_x), int(screen_y)),
                     scale=zoom_level,
                     debug=debug
                 )
@@ -412,20 +385,15 @@ class Map:
     ##               TILE HELPERS                  ##
     #################################################
 
-    def in_bounds(self, pos):
-        """Returns True if coordinates are valid."""
+    def in_bounds_2d(self, x, y):
+        return 0 <= x < self.width and 0 <= y < self.height
 
-        if not (0 <= pos.x < self.width):
-            return False
-
-        if not (0 <= pos.y < self.height):
-            return False
-
-        # z is only required for 3D tile access
-        if pos.z is None:
-            return True
-
-        return 0 <= pos.z < self.depth
+    def in_bounds_3d(self, x, y, z):
+        return (
+            0 <= x < self.width and
+            0 <= y < self.height and
+            0 <= z < self.depth
+        )
     
     #################################################
     ##               TILE LOOKUPS                  ##
@@ -437,8 +405,11 @@ class Map:
         if pos.z is None:
             return
 
-        if not self.in_bounds(pos):
-            return
+        if pos.z is None:
+            return False
+
+        if not self.in_bounds_3d(pos.x, pos.y, pos.z):
+            return False
 
         self.tiles[int(pos.z), int(pos.y), int(pos.x)] = tile_id
 
@@ -448,8 +419,11 @@ class Map:
         if pos.z is None:
             return -1  # invalid for voxel access
 
-        if not self.in_bounds(pos):
-            return -1
+        if pos.z is None:
+            return False
+
+        if not self.in_bounds_3d(pos.x, pos.y, pos.z):
+            return False
 
         return self.tiles[int(pos.z), int(pos.y), int(pos.x)]
 
@@ -480,18 +454,8 @@ class Map:
     #################################################
     ##             SURFACE HELPERS                 ##
     #################################################
-    def get_surface_z_coords(self, x, y):
-        """Returns cached surface z."""
-
-        if not (0 <= x < self.width and 0 <= y < self.height):
+    
+    def get_surface_z(self, x, y):
+        if not self.in_bounds_2d(x, y):
             return 0
-
         return self.heightmap[int(y), int(x)]
-
-    def get_surface_z(self, pos):
-        """Returns cached surface z."""
-
-        if not self.in_bounds(pos):
-            return 0
-
-        return self.heightmap[int(pos.y), int(pos.x)]

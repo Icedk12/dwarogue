@@ -43,3 +43,5 @@ class EntityManager:
         """Draws all entities."""
         for e in self.entities:
             e.draw(scale)
+        print("drawing entities:", len(self.entities))
+        print("player pos:", self.player.pos)

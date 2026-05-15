@@ -43,7 +43,20 @@ class Game:
         ######### PLAYER #########
 
         
-        self.entity_manager.set_player(Player(self,EntityCreateInfo("Player",pygame.Vector3(0, 0, self.map_manager.map.depth - 1),"player")))
+        spawn_x = 0
+        spawn_y = 0
+        spawn_z = self.camera_manager.z  # Use camera's z-level instead
+
+        self.entity_manager.set_player(
+            Player(
+                self,
+                EntityCreateInfo(
+                    "Player",
+                    pygame.Vector3(spawn_x, spawn_y, spawn_z),
+                    "player"
+                )
+            )
+        )
 
 
 

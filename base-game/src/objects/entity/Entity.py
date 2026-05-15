@@ -37,7 +37,7 @@ class Entity:
         """Moves the player down a level until they are not in the air."""
         falling = False
         while self.game.map_manager.map.get_tile_id(self.pos) == 0: # Checks if the floor tile at the players pos is air (0)
-            if self.z <= 0:
+            if self.pos.z <= 0:
                 break # Prevents falling out of map
             self.pos.z -= 1 # Falls you down a layer
             falling = True
@@ -64,6 +64,7 @@ class Entity:
             # If new pos is walkable, move to it, and then apply gravity
             self.pos = new_position
             self.apply_gravity()
+            return True # Succeeded
 
         ######## CLIMBING ########
         for z_layer in range(1, self.max_climb_height + 1):
