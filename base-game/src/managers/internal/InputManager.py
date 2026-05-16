@@ -55,7 +55,7 @@ class InputManager:
         if event.key == pygame.K_SPACE:
             self.wait_turn()
 
-        # REGENERATE DEBUG TOOL (Should not cost a game turn!) #
+        # REGENERATE DEBUG TOOL
         if event.key == pygame.K_r:
             self.regenerate()
             

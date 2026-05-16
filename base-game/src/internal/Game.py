@@ -123,7 +123,7 @@ class Game:
         if self.map_manager.generating:
             bar_size = 30
             screen_size_tu = self.screen.get_size()
-            self.draw_loading_bar(100, screen_size_tu[1] // 2 - bar_size, self.screen.get_size()[0] + 100, bar_size, self.map_manager.generation_progress)
+            self.draw_loading_bar(0, screen_size_tu[1] // 2 - bar_size, self.screen.get_size()[0], bar_size, self.map_manager.generation_progress)
             return
         
         self.map_manager.map.draw(self.screen, self.camera_manager.camera, self.camera_manager.z, self.camera_manager.zoom_level, False)
