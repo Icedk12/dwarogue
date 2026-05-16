@@ -61,6 +61,7 @@ class Entity:
         new_x = self.pos.x + direction_vec2.x
         new_y = self.pos.y + direction_vec2.y
 
+        # Keep this as a proper Vector3 object for safety
         new_position = pygame.Vector3(new_x, new_y, self.pos.z)
 
         # Check if wall blocks horizontal movement at current z
@@ -69,14 +70,17 @@ class Entity:
             for z_layer in range(1, self.max_climb_height + 1):
                 new_position.z = self.pos.z + z_layer
                 if not self.game.map_manager.map.is_wall_blocking(new_position):
-                    self.pos = new_position
+                    # Update fields directly instead of wiping the object out
+                    self.pos.x = new_position.x
+                    self.pos.y = new_position.y
+                    self.pos.z = new_position.z
                     self.apply_gravity()
                     return True
             return False  # Can't climb over
 
-        # Not blocked by wall, move horizontally and settle with gravity
-        new_position.z = self.pos.z
-        self.pos = new_position
+        # Assign fields directly to keep the original Vector3 intact
+        self.pos.x = new_position.x
+        self.pos.y = new_position.y
         self.apply_gravity()
         return True
             

@@ -17,8 +17,11 @@ class Player(Entity):
         self.skill_manager = SkillManager(self)
 
     def move_and_return(self, direction_vec2):
-        if super().move_and_return(direction_vec2):
+        moved = super().move_and_return(direction_vec2)
+        if moved:
             self.on_walk()
+        return moved
+            
     
     def on_walk(self):
         self.skill_manager.skills["running"].add_experience(1)

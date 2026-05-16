@@ -34,7 +34,7 @@ class Game:
 
         ######### MANAGERS #########
         self.asset_manager = AssetManager("base_set") # TODO: make this changeable and a variable
-        self.map_manager = MapManager(self, MapCreateInfo(500, 500, 50))
+        self.map_manager = MapManager(self, MapCreateInfo(200, 200, 50))
         self.camera_manager = CameraManager(self) # This manages the camera
         self.input_manager = InputManager(self)
         self.event_manager = EventManager(self)
@@ -83,6 +83,19 @@ class Game:
     ##               GAME FUNCTIONS                ##
     #################################################
     
+    def draw_debug_label(self):
+        debug_surface = self.font.render(
+            f"FPS: {int(self.clock.get_fps())} | " 
+            f"CAM_POS: {pygame.Vector3(int(self.camera_manager.camera.x), int(self.camera_manager.camera.y), int(self.camera_manager.z))} | "
+            f"PLAYER_POS: {self.entity_manager.player.pos} | "
+            f"VISIBLE_TILES: {self.map_manager.map.rendered_tiles_num} | "
+            f"TURN: {self.turn}", 
+            True,
+            (255, 255, 255),
+            (0, 0, 0)
+        )
+        self.screen.blit(debug_surface, (10, 10))
+
     def draw_loading_bar(self, x, y, max_width, height, progress):
         # Clamp progress
         progress = max(0.0, min(1.0, progress))
@@ -93,29 +106,33 @@ class Game:
         # Draw the single rectangle
         pygame.draw.rect(self.screen, (255, 255, 255), (x, y, current_width, height))           
 
-    def start(self):
-        print("Started game.")
+    def generate_map(self):
+        print("Generating map...")
         self.map_manager.start_world_generation()
     
     def update(self):
         if self.map_manager.generating:
-            self.map_manager.update_world_generation() # If map is generating still then update generation
-            print(f"Generation progress {self.map_manager.generation_progress * 100:.1f}")
+            self.map_manager.update_world_generation()
         else:
-            self.entity_manager.update_turn()   
+            if self.input_manager.player_took_action:
+                self.entity_manager.update_turn()
+                self.input_manager.player_took_action = False
 
     def draw(self):
         self.screen.fill((0, 0, 0))
         if self.map_manager.generating:
             bar_size = 30
             screen_size_tu = self.screen.get_size()
-            self.draw_loading_bar(100, screen_size_tu[1] // 2 - bar_size, self.screen.get_size()[0] - 100, bar_size, self.map_manager.generation_progress)
+            self.draw_loading_bar(100, screen_size_tu[1] // 2 - bar_size, self.screen.get_size()[0] + 100, bar_size, self.map_manager.generation_progress)
             return
-        self.map_manager.map.draw(self.screen, self.camera_manager.camera, self.camera_manager.z, self.camera_manager.zoom_level, self.global_debug)
+        
+        self.map_manager.map.draw(self.screen, self.camera_manager.camera, self.camera_manager.z, self.camera_manager.zoom_level, False)
         self.entity_manager.draw(self.screen, self.camera_manager.zoom_level)
+        if self.global_debug:
+            self.draw_debug_label()
 
     def loop(self):
-        self.start() # Call start only once
+        self.generate_map() # Call start only once
 
         ### LOOP ###
         while self.running:
