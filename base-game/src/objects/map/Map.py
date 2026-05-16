@@ -37,6 +37,8 @@ class Map:
         self.depth = create_info.depth
 
         self.tile_size = 32
+        self.lower_view_layers = 1
+        self.rendered_tiles_num = 0
 
         #################################################
         ##             NOISE SETTINGS                  ##
@@ -315,71 +317,71 @@ class Map:
     #################################################
 
     def draw(self, surface, camera_pos: pygame.Vector2, current_z: int, zoom_level: float, debug=False):
-        """Draws visible tiles."""
-
-        #################################################
-        ##             CAMERA CULLING                  ##
-        #################################################
-
+        """Draws visible tiles with layers below shown at reduced opacity."""
+        self.rendered_tiles_num = 0
+        
         tile_size = self.tile_size
-
-        # visible area in TILE SPACE (because camera is tile-based)
         visible_tiles_w = surface.get_width() / (tile_size * zoom_level)
         visible_tiles_h = surface.get_height() / (tile_size * zoom_level)
 
         cam_x = camera_pos.x
         cam_y = camera_pos.y
-
-        cull_buffer = 5  # Buffer to prevent visible culling when zoomed
+        cull_buffer = 2
 
         start_x = max(0, int(cam_x - visible_tiles_w // 2 - cull_buffer))
         start_y = max(0, int(cam_y - visible_tiles_h // 2 - cull_buffer))
-
         end_x = min(self.width, int(cam_x + visible_tiles_w // 2 + cull_buffer))
         end_y = min(self.height, int(cam_y + visible_tiles_h // 2 + cull_buffer))
 
         screen_center_x = surface.get_width() // 2
         screen_center_y = surface.get_height() // 2
 
-        #################################################
-        ##                DRAW LOOP                    ##
-        #################################################
+        # Draw layers below first (so current layer is on top)
+        levels_below = self.lower_view_layers
+        for z_offset in range(1, levels_below + 1):
+            z = current_z - z_offset
+            if z < 0:
+                break
 
+            alpha = int((1.0 - (z_offset / (levels_below + 1))) * 255)
+
+            for y in range(start_y, end_y):
+                for x in range(start_x, end_x):
+                    tile_id = self.tiles[z, y, x]
+                    above_tile_id = self.tiles[z + 1, y, x]
+
+                    if above_tile_id != self.tile_manager.TILE_AIR:
+                        continue
+
+                    if tile_id == self.tile_manager.TILE_AIR:
+                        continue
+                    
+                    tile = self.tile_manager.get_tile(tile_id)
+                    if tile is None:
+                        continue
+
+                    screen_x = screen_center_x + (x - cam_x) * tile_size * zoom_level
+                    screen_y = screen_center_y + (y - cam_y) * tile_size * zoom_level
+
+                    tile.draw((int(screen_x), int(screen_y)), scale=zoom_level, debug=debug, alpha=alpha)
+                    self.rendered_tiles_num += 1
+
+        # Draw current layer at full opacity
         for y in range(start_y, end_y):
-
             for x in range(start_x, end_x):
-
                 tile_id = self.tiles[current_z, y, x]
-
-                #################################################
-                ##                 SKIP AIR                   ##
-                #################################################
-
                 if tile_id == self.tile_manager.TILE_AIR:
                     continue
 
                 tile = self.tile_manager.get_tile(tile_id)
-
                 if tile is None:
                     continue
 
-                #################################################
-                ##              SCREEN POSITION               ##
-                #################################################
-
-                # TILE SPACE → SCREEN SPACE
                 screen_x = screen_center_x + (x - cam_x) * tile_size * zoom_level
                 screen_y = screen_center_y + (y - cam_y) * tile_size * zoom_level
 
-                #################################################
-                ##                 DRAW TILE                  ##
-                #################################################
-
-                tile.draw(
-                    (int(screen_x), int(screen_y)),
-                    scale=zoom_level,
-                    debug=debug
-                )
+                tile.draw((int(screen_x), int(screen_y)), scale=zoom_level, debug=debug)
+                self.rendered_tiles_num += 1
 
     #################################################
     ##               TILE HELPERS                  ##

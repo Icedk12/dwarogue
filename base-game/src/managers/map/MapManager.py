@@ -16,7 +16,7 @@ class MapManager:
         ###### SETUP ######
         self.game = game
         self.map = Map(self.game, MapCreateInfo)
-        
+
         ###### GENERATION ######
         self.world_generator = None
         self.generating = False
